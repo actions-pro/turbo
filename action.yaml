@@ -1,0 +1,21 @@
+name: Turbo
+description:
+
+inputs:
+  turbo:
+    description:
+    default: run build
+
+runs:
+  using: composite
+  steps:
+    - name: Get last workflow run
+      id: last_workflow_run
+      if: ${{ startsWith(inputs.turbo, 'run ') }}
+      uses: actions-pro/last-workflow-run@v1
+
+    - name: Turbo
+      shell: bash
+      env:
+        TURBO_CACHE_DIR: .turbo
+      run: ${{ startsWith(inputs.turbo, 'run ') && format('echo -n "${INPUT_TURBO#????}" | xargs turbo run --filter=[{0}..HEAD]', steps.last_workflow_run.outputs.sha) || format('turbo {0}', input.turbo) }}
