@@ -10,7 +10,7 @@ runs:
   using: composite
   steps:
     - name: Get last workflow run
-      id: last_workflow_run
+      id: last-workflow-run
       if: ${{ startsWith(inputs.turbo, 'run ') }}
       uses: actions-pro/last-workflow-run@v1
 
@@ -18,4 +18,4 @@ runs:
       shell: bash
       env:
         TURBO_CACHE_DIR: .turbo
-      run: ${{ startsWith(inputs.turbo, 'run ') && steps.last_workflow_run.outputs.sha && format('echo -n "${INPUT_TURBO#????}" | xargs turbo run --filter=[{0}..HEAD]', steps.last_workflow_run.outputs.sha) || format('turbo {0}', input.turbo) }}
+      run: ${{ startsWith(inputs.turbo, 'run ') && steps.last-workflow-run.outputs.sha && format('echo -n "${INPUT_TURBO#????}" | xargs turbo run --filter=[{0}..HEAD]', steps.last-workflow-run.outputs.sha) || format('turbo {0}', input.turbo) }}
