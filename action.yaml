@@ -14,8 +14,33 @@ runs:
       if: ${{ startsWith(inputs.turbo, 'run ') }}
       uses: actions-pro/last-workflow-run@v1
 
+    - uses: actions/github-script@v7
+      id: create-turbo-command
+      env:
+        LAST_WORKFLOW_RUN_SHA: ${{ steps.last-workflow-run.outputs.sha }}
+        INPUT_TURBO: ${{ inputs.turbo }}
+      with:
+        result-encoding: string
+        script: |
+          const turbo = process.env['INPUT_TURBO']
+          const sha = process.env['LAST_WORKFLOW_RUN_SHA']
+
+          if (!turbo.startsWith('run ') || !sha) {
+            return `turbo ${turbo}`
+          }
+
+          if (turbo.includes('{{sha}}')) {
+            return `turbo ${turbo}`.replace('{{sha}}', `${sha}`)
+          }
+
+          if (turbo.includes('--filter')) {
+            return `turbo ${turbo}`.replace(/--filter[= ][^ ]+?(?= )/, (match) => match.includes('[') ? match : `${match}[${sha}...HEAD]`)
+          }
+
+          return `turbo run --filter=[${sha}...HEAD] ${turbo.substring(4)}`
+
     - name: Turbo
       shell: bash
       env:
         TURBO_CACHE_DIR: .turbo
-      run: ${{ startsWith(inputs.turbo, 'run ') && steps.last-workflow-run.outputs.sha && format('echo -n "{0}" | tail -c +5 | xargs turbo run --filter=[{1}..HEAD]', inputs.turbo, steps.last-workflow-run.outputs.sha) || format('turbo {0}', inputs.turbo) }}
+      run: ${{ steps.create-turbo-command.outputs.result }}
